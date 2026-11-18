@@ -1,0 +1,557 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated student profile record for StudyTrack AI.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "program": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "starterSeeded": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "program", "starterSeeded", "createdAt", "updatedAt"]
+    },
+    "Course": {
+      "title": "Course",
+      "description": "An AI Associate Degree course enrolled by the student.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "lecturer": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 120
+        },
+        "semester": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerId", "code", "title", "lecturer", "semester", "createdAt", "updatedAt"]
+    },
+    "ClassworkItem": {
+      "title": "ClassworkItem",
+      "description": "Tracked assignment, lab, quiz, reading, or missed lecture catch-up task.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "courseCode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "courseTitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "type": {
+          "type": "string",
+          "enum": ["Assignment", "Lab", "Quiz", "Module Reading", "Lecture Catch-Up", "Project"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Urgent Catch-Up", "In Progress", "Upcoming", "Completed"]
+        },
+        "dueDate": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "estimatedMinutes": {
+          "type": "integer"
+        },
+        "source": {
+          "type": "string",
+          "enum": ["Manual", "Zoom Transcript", "Zoom Recording", "Module File", "Gmail"]
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 2000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "courseCode",
+        "courseTitle",
+        "title",
+        "type",
+        "status",
+        "dueDate",
+        "estimatedMinutes",
+        "source",
+        "notes",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "LectureAnalysis": {
+      "title": "LectureAnalysis",
+      "description": "Auto-organized Zoom lecture transcript or recording breakdown with topic and keyword tags.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "courseCode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "moduleTopic": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "keywords": {
+          "type": "array"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "lectureDate": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "sourceType": {
+          "type": "string",
+          "enum": ["Transcript", "Recording"]
+        },
+        "fileName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "durationOrLines": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "plainEnglishSummary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "keyConcepts": {
+          "type": "array"
+        },
+        "actionItems": {
+          "type": "array"
+        },
+        "checkQuestions": {
+          "type": "array"
+        },
+        "rawExcerpt": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 8000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "courseCode",
+        "moduleTopic",
+        "keywords",
+        "title",
+        "lectureDate",
+        "sourceType",
+        "fileName",
+        "durationOrLines",
+        "plainEnglishSummary",
+        "keyConcepts",
+        "actionItems",
+        "checkQuestions",
+        "rawExcerpt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ModuleGuide": {
+      "title": "ModuleGuide",
+      "description": "Auto-organized plain-English study guide from a downloaded course module file with topic and keyword tags.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "courseCode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "moduleTopic": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "keywords": {
+          "type": "array"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "fileName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "overview": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "learningObjectives": {
+          "type": "array"
+        },
+        "topicBreakdowns": {
+          "type": "array"
+        },
+        "difficultyNote": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 2000
+        },
+        "extractedTextPreview": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 8000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "courseCode",
+        "moduleTopic",
+        "keywords",
+        "title",
+        "fileName",
+        "overview",
+        "learningObjectives",
+        "topicBreakdowns",
+        "difficultyNote",
+        "extractedTextPreview",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CatchUpSprint": {
+      "title": "CatchUpSprint",
+      "description": "Personalized catch-up sprint plan generated for the student.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "hoursAvailable": {
+          "type": "number"
+        },
+        "focusMessage": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "steps": {
+          "type": "array"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerId", "hoursAvailable", "focusMessage", "steps", "createdAt", "updatedAt"]
+    },
+    "ProgressReport": {
+      "title": "ProgressReport",
+      "description": "Cross-source academic progress and catch-up gap analysis integrating emails and study materials.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "overallStatusSummary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "analyzedEmailCount": {
+          "type": "integer"
+        },
+        "courseProgress": {
+          "type": "array"
+        },
+        "prioritizedTopics": {
+          "type": "array"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "overallStatusSummary",
+        "analyzedEmailCount",
+        "courseProgress",
+        "prioritizedTopics",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TutorThread": {
+      "title": "TutorThread",
+      "description": "Persistent multi-source AI course chatbot and Socratic mastery coach conversation history.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["qa", "socratic"]
+        },
+        "focusCourse": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "masteredConcepts": {
+          "type": "array"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "messages": {
+          "type": "array"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerId", "mode", "focusCourse", "masteredConcepts", "title", "messages", "createdAt", "updatedAt"]
+    },
+    "InteractiveQuiz": {
+      "title": "InteractiveQuiz",
+      "description": "Interactive practice quiz generated from uploaded lectures and module files with saved student answers and mastery scores.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "courseCode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "topicFocus": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "difficulty": {
+          "type": "string",
+          "enum": ["Review", "Standard", "Challenge"]
+        },
+        "questions": {
+          "type": "array"
+        },
+        "answers": {
+          "type": "array"
+        },
+        "score": {
+          "type": "integer"
+        },
+        "totalQuestions": {
+          "type": "integer"
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "title",
+        "courseCode",
+        "topicFocus",
+        "difficulty",
+        "questions",
+        "answers",
+        "score",
+        "totalQuestions",
+        "completed",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Student profile document scoped strictly to the owning authenticated user."
+    },
+    "/users/{userId}/courses/{courseId}": {
+      "schema": { "$ref": "#/entities/Course" },
+      "description": "Student courses inside the AI Associate Degree workspace."
+    },
+    "/users/{userId}/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/ClassworkItem" },
+      "description": "Student classwork and catch-up tasks."
+    },
+    "/users/{userId}/lectures/{lectureId}": {
+      "schema": { "$ref": "#/entities/LectureAnalysis" },
+      "description": "Auto-organized Zoom lecture transcripts and recordings."
+    },
+    "/users/{userId}/modules/{moduleId}": {
+      "schema": { "$ref": "#/entities/ModuleGuide" },
+      "description": "Auto-organized plain-English breakdowns of downloaded course module files."
+    },
+    "/users/{userId}/sprints/{sprintId}": {
+      "schema": { "$ref": "#/entities/CatchUpSprint" },
+      "description": "Catch-up sprint plans generated for the student."
+    },
+    "/users/{userId}/progressReports/{reportId}": {
+      "schema": { "$ref": "#/entities/ProgressReport" },
+      "description": "Cross-source progress gap analyses integrating emails and uploaded study materials."
+    },
+    "/users/{userId}/tutorThreads/{threadId}": {
+      "schema": { "$ref": "#/entities/TutorThread" },
+      "description": "AI course chatbot and Socratic mastery coach conversation threads."
+    },
+    "/users/{userId}/quizzes/{quizId}": {
+      "schema": { "$ref": "#/entities/InteractiveQuiz" },
+      "description": "Interactive practice quizzes and graded attempts generated from course materials."
+    }
+  }
+}

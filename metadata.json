@@ -1,0 +1,6 @@
+{
+  "name": "StudyTrack AI",
+  "description": "Academic catch-up workspace for AI Associate Degree students to track classwork, analyze Zoom recordings and transcripts, break down course modules, and sync class emails.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

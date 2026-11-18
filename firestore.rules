@@ -64,7 +64,7 @@ service cloud.firestore {
     }
 
     function isValidTaskSource(val) {
-      return val in ['Manual', 'Zoom Transcript', 'Zoom Recording', 'Module File', 'Gmail'];
+      return val in ['Manual', 'Zoom Transcript', 'Zoom Recording', 'Module File', 'Gmail', 'Smart Note'];
     }
 
     function isValidClassworkItem(data, userId) {
@@ -111,7 +111,8 @@ service cloud.firestore {
         && data.keys().hasOnly([
           'ownerId', 'courseCode', 'moduleTopic', 'keywords', 'title', 'lectureDate', 'sourceType', 'fileName',
           'durationOrLines', 'plainEnglishSummary', 'keyConcepts', 'actionItems',
-          'checkQuestions', 'rawExcerpt', 'createdAt', 'updatedAt'
+          'checkQuestions', 'rawExcerpt', 'studentNameMentions', 'classifiedMoments',
+          'tipsAndWarnings', 'fullTranscript', 'createdAt', 'updatedAt'
         ])
         && data.ownerId is string && data.ownerId == userId && isValidId(data.ownerId)
         && data.courseCode is string && data.courseCode.size() >= 1 && data.courseCode.size() <= 24
@@ -127,6 +128,10 @@ service cloud.firestore {
         && isBoundedMapList(data.actionItems, 25)
         && isBoundedMapList(data.checkQuestions, 15)
         && data.rawExcerpt is string && data.rawExcerpt.size() <= 8000
+        && (!('studentNameMentions' in data) || isBoundedMapList(data.studentNameMentions, 25))
+        && (!('classifiedMoments' in data) || isBoundedMapList(data.classifiedMoments, 50))
+        && (!('tipsAndWarnings' in data) || isBoundedStringList(data.tipsAndWarnings, 25))
+        && (!('fullTranscript' in data) || (data.fullTranscript is string && data.fullTranscript.size() <= 25000))
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -224,6 +229,43 @@ service cloud.firestore {
         && data.score is int && data.score >= 0 && data.score <= 15
         && data.totalQuestions is int && data.totalQuestions >= 1 && data.totalQuestions <= 15
         && data.completed is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidSmartNote(data, userId) {
+      return data.keys().hasAll([
+          'ownerId', 'courseCode', 'title', 'cardType', 'colorTag', 'pinned',
+          'content', 'codeLanguage', 'codeSettings', 'checklistItems',
+          'keywords', 'reminderAt', 'sourceLabel', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'courseCode', 'title', 'cardType', 'colorTag', 'pinned',
+          'content', 'codeLanguage', 'codeSettings', 'checklistItems',
+          'keywords', 'reminderAt', 'sourceLabel', 'emailSubject', 'flashcardHint',
+          'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == userId && isValidId(data.ownerId)
+        && data.courseCode is string && data.courseCode.size() >= 1 && data.courseCode.size() <= 24
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && data.cardType in ['code', 'checklist', 'note', 'flashcard', 'template']
+        && data.colorTag in ['slate', 'blue', 'amber', 'emerald', 'rose']
+        && data.pinned is bool
+        && data.content is string && data.content.size() <= 12000
+        && data.codeLanguage is string && data.codeLanguage.size() <= 32
+        && data.codeSettings is map
+        && data.codeSettings.keys().hasAll(['theme', 'showLineNumbers', 'wordWrap', 'fontSize'])
+        && data.codeSettings.keys().hasOnly(['theme', 'showLineNumbers', 'wordWrap', 'fontSize'])
+        && data.codeSettings.theme in ['dark', 'light']
+        && data.codeSettings.showLineNumbers is bool
+        && data.codeSettings.wordWrap is bool
+        && data.codeSettings.fontSize in ['sm', 'md', 'lg']
+        && isBoundedMapList(data.checklistItems, 40)
+        && isBoundedStringList(data.keywords, 12)
+        && data.reminderAt is string && data.reminderAt.size() <= 40
+        && data.sourceLabel is string && data.sourceLabel.size() <= 160
+        && (!('emailSubject' in data) || (data.emailSubject is string && data.emailSubject.size() <= 240))
+        && (!('flashcardHint' in data) || (data.flashcardHint is string && data.flashcardHint.size() <= 400))
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -384,6 +426,27 @@ service cloud.firestore {
           && incoming().updatedAt == request.time
           && incoming().diff(existing()).affectedKeys().hasOnly(['answers', 'score', 'completed', 'updatedAt']);
         allow delete: if isOwner(userId) && isValidId(userId) && isValidId(quizId);
+      }
+
+      match /notes/{noteId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(noteId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(noteId)
+          && isValidSmartNote(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && parentUserExists(userId);
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(noteId)
+          && isValidSmartNote(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'courseCode', 'title', 'cardType', 'colorTag', 'pinned',
+            'content', 'codeLanguage', 'codeSettings', 'checklistItems',
+            'keywords', 'reminderAt', 'emailSubject', 'flashcardHint', 'updatedAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(noteId);
       }
     }
   }

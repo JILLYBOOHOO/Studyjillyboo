@@ -2,8 +2,8 @@
 
 ## 1. Data Invariants
 
-1. **Strict Ownership Isolation**: Every document under `/users/{userId}` and its subcollections (`courses`, `tasks`, `lectures`, `modules`, `sprints`, `progressReports`, `tutorThreads`, `quizzes`) belongs exclusively to `userId == request.auth.uid` with `request.auth.token.email_verified == true`.
-2. **No Orphaned Subcollection Records**: Every subcollection document (`courses`, `tasks`, `lectures`, `modules`, `sprints`, `progressReports`, `tutorThreads`, `quizzes`) requires its parent `/users/{userId}` profile document to exist on creation.
+1. **Strict Ownership Isolation**: Every document under `/users/{userId}` and its subcollections (`courses`, `tasks`, `lectures`, `modules`, `sprints`, `progressReports`, `tutorThreads`, `quizzes`, `notes`) belongs exclusively to `userId == request.auth.uid` with `request.auth.token.email_verified == true`.
+2. **No Orphaned Subcollection Records**: Every subcollection document (`courses`, `tasks`, `lectures`, `modules`, `sprints`, `progressReports`, `tutorThreads`, `quizzes`, `notes`) requires its parent `/users/{userId}` profile document to exist on creation.
 3. **Immutable Ownership & Creation Timestamps**: `ownerId`, `uid`, and `createdAt` cannot be modified after creation. All `createdAt` and `updatedAt` timestamps must match `request.time`.
 4. **No Shadow Fields**: Every collection uses `keys().hasAll(...) && keys().hasOnly(...)` on create and `affectedKeys().hasOnly(...)` on update.
 5. **Bounded Strings & Arrays**: Every string field enforces strict `.size()` bounds; every array enforces `.size() <= MAX` and validates element types when non-empty.

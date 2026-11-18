@@ -16,6 +16,46 @@ import {
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { auth, db } from './firebaseClient';
+
+const HEART_AMBER_PROGRAM_LABEL = 'Associate Degree in Artificial Intelligence';
+
+const HEART_AMBER_COURSES = [
+  { id: 'ail1001', code: 'AIL1001', title: 'Introduction to Artificial Intelligence', lecturer: 'B.C. Rajesh', semester: 'Semester 1' },
+  { id: 'ail1002', code: 'AIL1002', title: 'Programming I (Python)', lecturer: 'B.M. Rajesh', semester: 'Semester 1' },
+  { id: 'ail1003', code: 'AIL1003', title: 'Discrete Mathematics', lecturer: 'B.C. Rajesh & B.M. Rajesh', semester: 'Semester 1' },
+  { id: 'stat101', code: 'STAT101', title: 'Statistics & Probability', lecturer: 'Faculty', semester: 'Semester 1' },
+  { id: 'ail1004', code: 'AIL1004', title: 'Communication Skills for Engineers', lecturer: 'S. Moffatt', semester: 'Semester 1' },
+  { id: 'eth101', code: 'ETH101', title: 'AI Law & Ethics', lecturer: 'S. Moffatt', semester: 'Semester 1' },
+  { id: 'agd101', code: 'AGD101', title: 'Agentic Development', lecturer: 'B.C. Rajesh & B.M. Rajesh', semester: 'Semester 1' },
+  { id: 'dsa101', code: 'DSA101', title: 'Data Structures & AI Project Work Labs', lecturer: 'J. Burrowes', semester: 'Semester 1' },
+];
+
+const HEART_STARTER_TASKS = [
+  {
+    id: 'task_starter_py',
+    courseCode: 'AIL1002',
+    courseTitle: 'Programming I (Python)',
+    title: 'Complete Python File Handling & CSV Lab Review',
+    type: 'Lab' as const,
+    status: 'Urgent Catch-Up' as const,
+    dueDate: '2026-12-03',
+    estimatedMinutes: 60,
+    source: 'Module File' as const,
+    notes: 'Focus on functions, file handling, NumPy arrays, and Pandas DataFrames.',
+  },
+  {
+    id: 'task_starter_nlp',
+    courseCode: 'AIL1001',
+    courseTitle: 'Introduction to Artificial Intelligence',
+    title: 'Review NLP Tokenization & Transformer Pipeline',
+    type: 'Lecture Catch-Up' as const,
+    status: 'In Progress' as const,
+    dueDate: '2026-12-04',
+    estimatedMinutes: 45,
+    source: 'Zoom Transcript' as const,
+    notes: 'Review tokenization, stemming vs. lemmatization, NER, and BERT concepts.',
+  },
+];
 import type {
   CatchUpSprint,
   ClassworkItem,
@@ -26,6 +66,8 @@ import type {
   ModuleGuide,
   ProgressReport,
   QuizAnswerRecord,
+  SmartNoteCard,
+  SmartNoteCodeSettings,
   TutorMessage,
   TutorMode,
   TutorThread,
@@ -118,7 +160,7 @@ export async function ensureUserProfileAndSeed(user: User): Promise<void> {
       await setDoc(userRef, {
         uid: user.uid,
         displayName: clampStr(user.displayName || 'AI Student', 120, 'AI Student'),
-        program: 'Associate Degree in Artificial Intelligence · Jamaica',
+        program: clampStr(HEART_AMBER_PROGRAM_LABEL, 160, 'Associate Degree in AI'),
         starterSeeded: true,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -130,204 +172,221 @@ export async function ensureUserProfileAndSeed(user: User): Promise<void> {
   }
 }
 
-export async function seedStarterWorkspace(uid: string): Promise<void> {
-  const batch = writeBatch(db);
-
-  const starterCourses = [
-    {
-      id: 'course_ai101',
-      code: 'AI-101',
-      title: 'Foundations of Artificial Intelligence',
-      lecturer: 'Mr. Campbell',
-      semester: 'Semester 1 · Associate Degree in AI',
-    },
-    {
-      id: 'course_py102',
-      code: 'PY-102',
-      title: 'Python Programming for Data Science',
-      lecturer: 'Ms. Brown',
-      semester: 'Semester 1 · Associate Degree in AI',
-    },
-    {
-      id: 'course_mth104',
-      code: 'MTH-104',
-      title: 'Linear Algebra & Calculus for AI',
-      lecturer: 'Dr. Gordon',
-      semester: 'Semester 1 · Associate Degree in AI',
-    },
-    {
-      id: 'course_db105',
-      code: 'DB-105',
-      title: 'Database Systems & SQL',
-      lecturer: 'Mr. Clarke',
-      semester: 'Semester 1 · Associate Degree in AI',
-    },
-  ];
-
-  for (const c of starterCourses) {
-    batch.set(doc(db, 'users', uid, 'courses', c.id), {
-      ownerId: uid,
-      code: c.code,
-      title: c.title,
-      lecturer: c.lecturer,
-      semester: c.semester,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-  }
-
-  const starterTasks = [
-    {
-      id: 'task_starter_1',
-      courseCode: 'AI-101',
-      courseTitle: 'Foundations of Artificial Intelligence',
-      title: 'Catch up on Week 4 Zoom lecture: Search Algorithms (BFS vs A*)',
-      type: 'Lecture Catch-Up',
-      status: 'Urgent Catch-Up',
-      dueDate: '2026-11-19',
-      estimatedMinutes: 45,
-      source: 'Manual',
-      notes: 'Download Zoom recording & transcript from portal and review heuristic examples.',
-    },
-    {
-      id: 'task_starter_2',
-      courseCode: 'PY-102',
-      courseTitle: 'Python Programming for Data Science',
-      title: 'Lab 3: NumPy Array Slicing & Vectorized Operations',
-      type: 'Lab',
-      status: 'Urgent Catch-Up',
-      dueDate: '2026-11-20',
-      estimatedMinutes: 60,
-      source: 'Manual',
-      notes: 'Focus on broadcasting shapes and avoiding nested loops.',
-    },
-    {
-      id: 'task_starter_3',
-      courseCode: 'MTH-104',
-      courseTitle: 'Linear Algebra & Calculus for AI',
-      title: 'Module 3 Workbook: Matrix Multiplication & Dot Products',
-      type: 'Module Reading',
-      status: 'In Progress',
-      dueDate: '2026-11-22',
-      estimatedMinutes: 50,
-      source: 'Module File',
-      notes: 'Review step-by-step worked examples before attempting practice set.',
-    },
-    {
-      id: 'task_starter_4',
-      courseCode: 'DB-105',
-      courseTitle: 'Database Systems & SQL',
-      title: 'Assignment 2: Normalization (1NF to 3NF) & JOIN Queries',
-      type: 'Assignment',
-      status: 'Upcoming',
-      dueDate: '2026-11-25',
-      estimatedMinutes: 75,
-      source: 'Manual',
-      notes: 'Check email for schema starter file.',
-    },
-  ];
-
-  for (const t of starterTasks) {
-    batch.set(doc(db, 'users', uid, 'tasks', t.id), {
-      ownerId: uid,
-      ...t,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-  }
-
-  batch.set(doc(db, 'users', uid, 'lectures', 'lec_starter_1'), {
-    ownerId: uid,
-    courseCode: 'AI-101',
-    moduleTopic: 'Module 3: Supervised Learning',
-    keywords: ['supervised learning', 'linear regression', 'features', 'MSE loss', 'train-test split'],
-    title: 'Week 3: Supervised Learning & Linear Regression Intuition',
-    lectureDate: '2026-11-12',
-    sourceType: 'Transcript',
-    fileName: 'AI101_Week3_Zoom.vtt',
-    durationOrLines: 'Sample starter note',
-    plainEnglishSummary:
-      'This class introduced how supervised machine learning learns patterns from labeled examples. Instead of writing rigid if/else rules by hand, the model draws a best-fit line through past data points to predict future numbers.',
-    keyConcepts: [
-      {
-        term: 'Features (X) vs. Target (y)',
-        simpleExplanation:
-          'Features are the input clues you give the model; the target is the answer you want it to predict.',
-        analogyOrExample:
-          'When predicting exam grades, study hours and attendance are Features (X), and the final grade is the Target (y).',
-      },
-      {
-        term: 'Loss Function (Mean Squared Error)',
-        simpleExplanation:
-          'A scorecard that measures how far off the model predictions are from the real answers.',
-        analogyOrExample:
-          'Like checking how many points you missed on a practice paper—smaller loss means better predictions.',
-      },
-    ],
-    actionItems: [
-      {
-        title: 'Complete Week 3 Regression Practice Worksheet',
-        type: 'Assignment',
-        dueHint: 'Before next Tuesday class',
-        estimatedMinutes: 40,
-        addedToTracker: false,
-      },
-    ],
-    checkQuestions: [
-      {
-        question: 'In supervised learning, why do we split data into training and test sets?',
-        answer:
-          'So we can check if the model actually learned general patterns instead of memorizing the training answers.',
-      },
-    ],
-    rawExcerpt:
-      'Sample lecture note included so you can preview how uploaded Zoom transcripts and recordings are broken down.',
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
-
-  batch.set(doc(db, 'users', uid, 'modules', 'mod_starter_1'), {
-    ownerId: uid,
-    courseCode: 'PY-102',
-    moduleTopic: 'Module 2: Python Data Structures & NumPy',
-    keywords: ['NumPy', 'dictionaries', 'vectorization', 'array shape', 'Python'],
-    title: 'Module 2: Python Lists, Dictionaries & NumPy Basics',
-    fileName: 'PY102_Module2_Guide.pdf',
-    overview:
-      'Covers how Python stores collections of data and why NumPy arrays are used in AI instead of plain Python lists when working with large datasets.',
-    learningObjectives: [
-      'Choose between a Python list and a dictionary for structured data.',
-      'Create 1D and 2D NumPy arrays and check their .shape.',
-      'Perform fast vectorized math on whole arrays without writing for-loops.',
-    ],
-    topicBreakdowns: [
-      {
-        topic: 'Python Dictionaries (Key-Value Pairs)',
-        plainEnglish:
-          'A dictionary stores labeled data so you look up values by name instead of guessing an index number.',
-        keyTakeaway: 'Use curly braces {} with key: value pairs when data has named fields.',
-        exampleOrCode:
-          "student = {'program': 'AI Associate', 'module': 2}\nprint(student['program'])",
-      },
-      {
-        topic: 'Why NumPy Arrays Beat Lists in AI',
-        plainEnglish:
-          'NumPy packs numbers tightly in memory so you can multiply thousands of numbers at once in one line of code.',
-        keyTakeaway: 'Always inspect array.shape first—most beginner AI errors come from mismatched shapes.',
-        exampleOrCode:
-          'import numpy as np\nscores = np.array([72, 85, 90])\ncurved = scores + 5',
-      },
-    ],
-    difficultyNote:
-      'Students often get stuck on 2D array indexing (rows first, columns second: arr[row, col]). Practice with a 2x3 grid on paper first.',
-    extractedTextPreview:
-      'Sample module breakdown. Upload your own downloaded PDF, TXT, MD, PY, or IPYNB module file above to generate a custom guide.',
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
+export async function syncAmberHeartCurriculumDoc(uid: string): Promise<{
+  coursesAdded: number;
+  coursesUpdated: number;
+  tasksAdded: number;
+}> {
+  let coursesAdded = 0;
+  let coursesUpdated = 0;
+  let tasksAdded = 0;
 
   try {
+    const userRef = doc(db, 'users', uid);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      await updateDoc(userRef, {
+        program: clampStr(HEART_AMBER_PROGRAM_LABEL, 160, 'Associate Degree in AI'),
+        updatedAt: serverTimestamp(),
+      });
+    }
+
+    const [existingCoursesSnap, existingTasksSnap] = await Promise.all([
+      getDocs(query(collection(db, 'users', uid, 'courses'), where('ownerId', '==', uid))),
+      getDocs(query(collection(db, 'users', uid, 'tasks'), where('ownerId', '==', uid))),
+    ]);
+
+    const existingCourseById = new Map<string, string>();
+    const existingCourseByCode = new Map<string, string>();
+    for (const d of existingCoursesSnap.docs) {
+      existingCourseById.set(d.id, d.id);
+      const code = String(d.data().code || '').trim().toUpperCase();
+      if (code) existingCourseByCode.set(code, d.id);
+    }
+
+    const existingTaskIds = new Set(existingTasksSnap.docs.map((d) => d.id));
+    const existingTaskTitles = new Set(
+      existingTasksSnap.docs.map((d) => String(d.data().title || '').trim().toLowerCase()),
+    );
+
+    const batch = writeBatch(db);
+
+    for (const c of HEART_AMBER_COURSES) {
+      const targetId =
+        existingCourseById.get(c.id) || existingCourseByCode.get(c.code.toUpperCase()) || null;
+      const payload = {
+        code: clampStr(c.code, 24, 'COURSE'),
+        title: clampStr(c.title, 160, 'Course'),
+        lecturer: clampStr(c.lecturer, 120, 'TBA'),
+        semester: clampStr(c.semester, 120, 'HEART/NSTA Amber Academy'),
+      };
+
+      if (targetId) {
+        batch.update(doc(db, 'users', uid, 'courses', targetId), {
+          ...payload,
+          updatedAt: serverTimestamp(),
+        });
+        coursesUpdated++;
+      } else {
+        batch.set(doc(db, 'users', uid, 'courses', c.id), {
+          ownerId: uid,
+          ...payload,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        coursesAdded++;
+      }
+    }
+
+    for (const t of HEART_STARTER_TASKS) {
+      if (existingTaskIds.has(t.id) || existingTaskTitles.has(t.title.trim().toLowerCase())) {
+        continue;
+      }
+      batch.set(doc(db, 'users', uid, 'tasks', t.id), {
+        ownerId: uid,
+        courseCode: clampStr(t.courseCode, 24, 'AIL1001'),
+        courseTitle: clampStr(t.courseTitle, 160, 'AI Associate Degree'),
+        title: clampStr(t.title, 240, 'Classwork Task'),
+        type: t.type,
+        status: t.status,
+        dueDate: clampStr(t.dueDate, 32, 'TBD'),
+        estimatedMinutes: Math.max(1, Math.min(600, Math.round(t.estimatedMinutes))),
+        source: t.source,
+        notes: clampStr(t.notes, 2000, ''),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      tasksAdded++;
+    }
+
     await batch.commit();
+    return { coursesAdded, coursesUpdated, tasksAdded };
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `users/${uid}`);
+  }
+}
+
+export async function seedStarterWorkspace(uid: string): Promise<void> {
+  try {
+    await syncAmberHeartCurriculumDoc(uid);
+
+    const [existingLecturesSnap, existingModulesSnap] = await Promise.all([
+      getDocs(query(collection(db, 'users', uid, 'lectures'), where('ownerId', '==', uid))),
+      getDocs(query(collection(db, 'users', uid, 'modules'), where('ownerId', '==', uid))),
+    ]);
+
+    const existingLecIds = new Set(existingLecturesSnap.docs.map((d) => d.id));
+    const existingModIds = new Set(existingModulesSnap.docs.map((d) => d.id));
+
+    const batch = writeBatch(db);
+    let hasWrites = false;
+
+    if (!existingLecIds.has('lec_starter_amber_1')) {
+      hasWrites = true;
+      batch.set(doc(db, 'users', uid, 'lectures', 'lec_starter_amber_1'), {
+        ownerId: uid,
+        courseCode: 'AIL1001',
+        moduleTopic: 'Phase 3 · NLP (Weeks 17–20) & Supervised Learning',
+        keywords: [
+          'tokenization',
+          'stemming',
+          'lemmatization',
+          'NER',
+          'BERT',
+          'supervised learning',
+        ],
+        title: 'NLP Foundations (Weeks 17–20): Tokenization, Embeddings & Chatbots',
+        lectureDate: '2026-11-30',
+        sourceType: 'Transcript',
+        fileName: 'AIL1001_NLP_Weeks17_20_Sample.vtt',
+        durationOrLines: 'Sample syllabus note',
+        plainEnglishSummary:
+          'Covers how machines clean raw human text and convert sentences into tokens, vectors, and meaning. Connects text preprocessing (cleaning, stemming, lemmatization, NER) to modern BERT encoders and conversational AI chatbots.',
+        keyConcepts: [
+          {
+            term: 'Tokenization & Stemming vs. Lemmatization',
+            simpleExplanation:
+              'Tokenization splits sentences into pieces; stemming chops word endings quickly while lemmatization uses grammar rules to find the true dictionary root word.',
+            analogyOrExample:
+              'Stemming turns "running" and "studies" into "run" / "studi", whereas lemmatization cleanly gives "run" and "study".',
+          },
+          {
+            term: 'Transformer Flow & Self-Attention',
+            simpleExplanation:
+              'Instead of reading one word at a time like older RNNs, Transformers inspect every word in a sentence together so the model knows which words relate.',
+            analogyOrExample:
+              'In "The bank by the river flooded", self-attention links "bank" strongly to "river" rather than money.',
+          },
+        ],
+        actionItems: [
+          {
+            title: 'Review AIL1001 Introduction to AI & NLP Chatbot Pipeline before Friday Revision',
+            type: 'Lecture Catch-Up',
+            dueHint: 'Friday 8:30 AM Revision (B.C. Rajesh)',
+            estimatedMinutes: 40,
+            addedToTracker: false,
+          },
+        ],
+        checkQuestions: [
+          {
+            question: 'Why do Transformers process text more accurately over long sentences than older RNNs or LSTMs?',
+            answer:
+              'They use parallel processing and Multi-Head Self-Attention to connect distant words directly instead of passing memory sequentially step by step.',
+          },
+        ],
+        rawExcerpt:
+          'Starter syllabus guide aligned to your HEART/NSTA Amber Academy NLP (Weeks 17–20) and Transformer slides.',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+
+    if (!existingModIds.has('mod_starter_amber_1')) {
+      hasWrites = true;
+      batch.set(doc(db, 'users', uid, 'modules', 'mod_starter_amber_1'), {
+        ownerId: uid,
+        courseCode: 'AIL1002',
+        moduleTopic: 'Phase 1 · Python Foundations, File Handling & NumPy/Pandas',
+        keywords: ['Python', 'file handling', 'CSV', 'NumPy', 'Pandas', 'Jupyter'],
+        title: 'AIL1002 Programming I (Python): Core Foundations & Data Analysis',
+        fileName: 'AIL1002_Python_Foundations_Guide.pdf',
+        overview:
+          'Focused revision guide for bringing Programming I (Python) from 50% to 100%, covering loops, functions, file handling, CSV reading, NumPy arrays, and Pandas DataFrames.',
+        learningObjectives: [
+          'Write clean Python functions, conditionals, and loops without syntax errors.',
+          'Read and analyze CSV datasets safely using Python file handling and Pandas.',
+          'Create NumPy arrays and check .shape before feeding data into ML models.',
+        ],
+        topicBreakdowns: [
+          {
+            topic: 'File Handling & CSV Analysis',
+            plainEnglish:
+              'Always open files using a "with open(...) as f:" block so Python closes the file automatically even if an error happens.',
+            keyTakeaway: 'Use csv or pandas.read_csv() to turn raw spreadsheet text into structured tables.',
+            exampleOrCode:
+              "import pandas as pd\ndf = pd.read_csv('students.csv')\nprint(df.head())",
+          },
+          {
+            topic: 'NumPy Arrays vs. Python Lists',
+            plainEnglish:
+              'NumPy packs numbers tightly in memory so you can calculate averages or scale entire columns in one fast operation.',
+            keyTakeaway: 'Always inspect array.shape first—most beginner AI errors come from mismatched shapes.',
+            exampleOrCode:
+              'import numpy as np\nscores = np.array([72, 85, 90])\nprint(scores.mean(), scores.shape)',
+          },
+        ],
+        difficultyNote:
+          'Common hurdle before B.M. Rajesh Thursday revision: forgetting to return values from functions (printing instead of returning) and confusing list indexing with Pandas .loc/.iloc.',
+        extractedTextPreview:
+          'Starter guide aligned to HEART/NSTA Amber Academy Python Foundations (Variables, Conditionals, Loops & Functions, File Handling, NumPy, Pandas, CSV Reader, Student Record System).',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+
+    if (hasWrites) {
+      await batch.commit();
+    }
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `users/${uid}`);
   }
@@ -344,6 +403,7 @@ export function subscribeWorkspace(
     onProgressReport: (report: ProgressReport | null) => void;
     onTutorThreads: (threads: TutorThread[]) => void;
     onQuizzes: (quizzes: InteractiveQuiz[]) => void;
+    onNotes: (notes: SmartNoteCard[]) => void;
     onError: (err: Error) => void;
   },
 ): () => void {
@@ -424,6 +484,16 @@ export function subscribeWorkspace(
             actionItems: Array.isArray(data.actionItems) ? data.actionItems : [],
             checkQuestions: Array.isArray(data.checkQuestions) ? data.checkQuestions : [],
             rawExcerpt: String(data.rawExcerpt || ''),
+            studentNameMentions: Array.isArray(data.studentNameMentions)
+              ? data.studentNameMentions
+              : [],
+            classifiedMoments: Array.isArray(data.classifiedMoments)
+              ? data.classifiedMoments
+              : [],
+            tipsAndWarnings: Array.isArray(data.tipsAndWarnings)
+              ? data.tipsAndWarnings.map(String)
+              : [],
+            fullTranscript: typeof data.fullTranscript === 'string' ? data.fullTranscript : '',
             createdAt: timestampToIso(data.createdAt),
           };
         }),
@@ -586,6 +656,68 @@ export function subscribeWorkspace(
     },
   );
 
+  const unsubNotes = onSnapshot(
+    query(collection(db, 'users', uid, 'notes'), where('ownerId', '==', uid), orderBy('updatedAt', 'desc')),
+    (snap) => {
+      callbacks.onNotes(
+        snap.docs.map((d) => {
+          const data = d.data();
+          const rawSettings = (data.codeSettings || {}) as Partial<SmartNoteCodeSettings>;
+          return {
+            id: d.id,
+            courseCode: String(data.courseCode || 'AIL1001'),
+            title: String(data.title || 'Untitled Note'),
+            cardType:
+              data.cardType === 'code' ||
+              data.cardType === 'checklist' ||
+              data.cardType === 'flashcard' ||
+              data.cardType === 'template'
+                ? data.cardType
+                : 'note',
+            colorTag:
+              data.colorTag === 'blue' ||
+              data.colorTag === 'amber' ||
+              data.colorTag === 'emerald' ||
+              data.colorTag === 'rose'
+                ? data.colorTag
+                : 'slate',
+            pinned: Boolean(data.pinned),
+            content: String(data.content || ''),
+            codeLanguage: String(data.codeLanguage || 'python'),
+            codeSettings: {
+              theme: rawSettings.theme === 'light' ? 'light' : 'dark',
+              showLineNumbers: rawSettings.showLineNumbers !== false,
+              wordWrap: Boolean(rawSettings.wordWrap),
+              fontSize:
+                rawSettings.fontSize === 'sm' || rawSettings.fontSize === 'lg'
+                  ? rawSettings.fontSize
+                  : 'md',
+            },
+            checklistItems: Array.isArray(data.checklistItems)
+              ? data.checklistItems.map((item: { text?: unknown; done?: unknown }) => ({
+                  text: String(item.text || ''),
+                  done: Boolean(item.done),
+                }))
+              : [],
+            keywords: Array.isArray(data.keywords) ? data.keywords.map(String) : [],
+            reminderAt: String(data.reminderAt || ''),
+            sourceLabel: String(data.sourceLabel || 'Smart Notebook'),
+            emailSubject: typeof data.emailSubject === 'string' ? data.emailSubject : '',
+            flashcardHint: typeof data.flashcardHint === 'string' ? data.flashcardHint : '',
+            createdAt: timestampToIso(data.createdAt),
+          };
+        }),
+      );
+    },
+    (err) => {
+      try {
+        handleFirestoreError(err, OperationType.LIST, `users/${uid}/notes`);
+      } catch (wrapped) {
+        callbacks.onError(wrapped as Error);
+      }
+    },
+  );
+
   return () => {
     unsubCourses();
     unsubTasks();
@@ -595,6 +727,7 @@ export function subscribeWorkspace(
     unsubProgress();
     unsubTutor();
     unsubQuizzes();
+    unsubNotes();
   };
 }
 
@@ -698,6 +831,42 @@ export async function createLectureDoc(
       actionItems: (lecture.actionItems || []).slice(0, 25),
       checkQuestions: (lecture.checkQuestions || []).slice(0, 15),
       rawExcerpt: clampStr(lecture.rawExcerpt, 8000, ''),
+      ...(Array.isArray(lecture.studentNameMentions)
+        ? {
+            studentNameMentions: lecture.studentNameMentions.slice(0, 25).map((m) => ({
+              timestamp: clampStr(m.timestamp, 24, '00:00'),
+              startSeconds: Math.max(0, Math.round(Number(m.startSeconds) || 0)),
+              context: clampStr(m.context, 800, ''),
+              reason: clampStr(m.reason, 400, ''),
+            })),
+          }
+        : {}),
+      ...(Array.isArray(lecture.classifiedMoments)
+        ? {
+            classifiedMoments: lecture.classifiedMoments.slice(0, 50).map((m) => ({
+              timestamp: clampStr(m.timestamp, 24, '00:00'),
+              startSeconds: Math.max(0, Math.round(Number(m.startSeconds) || 0)),
+              endSeconds: Math.max(0, Math.round(Number(m.endSeconds) || 0)),
+              category: m.category || 'Key Point',
+              title: clampStr(m.title, 200, 'Key Moment'),
+              summary: clampStr(m.summary, 1000, ''),
+              codeSnippet: clampStr(m.codeSnippet, 3000, ''),
+              codeLanguage: clampStr(m.codeLanguage, 32, ''),
+              screenshotNeeded: Boolean(m.screenshotNeeded),
+            })),
+          }
+        : {}),
+      ...(Array.isArray(lecture.tipsAndWarnings)
+        ? {
+            tipsAndWarnings: lecture.tipsAndWarnings
+              .slice(0, 25)
+              .map((t) => clampStr(t, 480, ''))
+              .filter(Boolean),
+          }
+        : {}),
+      ...(typeof lecture.fullTranscript === 'string' && lecture.fullTranscript.trim()
+        ? { fullTranscript: clampStr(lecture.fullTranscript, 24900, '') }
+        : {}),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -1013,6 +1182,102 @@ export async function deleteQuizDoc(uid: string, quizId: string): Promise<void> 
   }
 }
 
+function sanitizeNotePayload(
+  note: Omit<SmartNoteCard, 'id' | 'createdAt'>,
+): Record<string, unknown> {
+  const cardType =
+    note.cardType === 'code' ||
+    note.cardType === 'checklist' ||
+    note.cardType === 'flashcard' ||
+    note.cardType === 'template'
+      ? note.cardType
+      : 'note';
+  const colorTag =
+    note.colorTag === 'blue' ||
+    note.colorTag === 'amber' ||
+    note.colorTag === 'emerald' ||
+    note.colorTag === 'rose'
+      ? note.colorTag
+      : 'slate';
+  const settings = note.codeSettings || {
+    theme: 'dark',
+    showLineNumbers: true,
+    wordWrap: false,
+    fontSize: 'md',
+  };
+  return {
+    courseCode: clampStr(note.courseCode, 24, 'AIL1001'),
+    title: clampStr(note.title, 200, 'Untitled Note'),
+    cardType,
+    colorTag,
+    pinned: Boolean(note.pinned),
+    content: String(note.content ?? '').slice(0, 12000),
+    codeLanguage: clampStr(note.codeLanguage, 32, 'python'),
+    codeSettings: {
+      theme: settings.theme === 'light' ? 'light' : 'dark',
+      showLineNumbers: Boolean(settings.showLineNumbers),
+      wordWrap: Boolean(settings.wordWrap),
+      fontSize:
+        settings.fontSize === 'sm' || settings.fontSize === 'lg' ? settings.fontSize : 'md',
+    },
+    checklistItems: (note.checklistItems || []).slice(0, 40).map((item) => ({
+      text: clampStr(item.text, 300, 'Item'),
+      done: Boolean(item.done),
+    })),
+    keywords: clampKeywords(note.keywords),
+    reminderAt: clampStr(note.reminderAt, 40, ''),
+    sourceLabel: clampStr(note.sourceLabel, 160, 'Smart Notebook'),
+    emailSubject: String(note.emailSubject ?? '').trim().slice(0, 240),
+    flashcardHint: String(note.flashcardHint ?? '').trim().slice(0, 400),
+  };
+}
+
+export async function createSmartNoteDoc(
+  uid: string,
+  note: Omit<SmartNoteCard, 'id' | 'createdAt'>,
+): Promise<string> {
+  const id = makeDocId('note');
+  const path = `users/${uid}/notes/${id}`;
+  try {
+    await setDoc(doc(db, 'users', uid, 'notes', id), {
+      ownerId: uid,
+      ...sanitizeNotePayload(note),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    return id;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, path);
+  }
+}
+
+export async function updateSmartNoteDoc(
+  uid: string,
+  noteId: string,
+  note: Omit<SmartNoteCard, 'id' | 'createdAt'>,
+): Promise<void> {
+  const path = `users/${uid}/notes/${noteId}`;
+  try {
+    const clean = sanitizeNotePayload(note);
+    delete clean.sourceLabel;
+    await updateDoc(doc(db, 'users', uid, 'notes', noteId), {
+      ...clean,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
+  }
+}
+
+export async function deleteSmartNoteDoc(uid: string, noteId: string): Promise<void> {
+  const path = `users/${uid}/notes/${noteId}`;
+  try {
+    await deleteDoc(doc(db, 'users', uid, 'notes', noteId));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
 export async function clearAllUserData(uid: string): Promise<void> {
   const subcollections = [
     'courses',
@@ -1023,6 +1288,7 @@ export async function clearAllUserData(uid: string): Promise<void> {
     'progressReports',
     'tutorThreads',
     'quizzes',
+    'notes',
   ] as const;
   try {
     const batch = writeBatch(db);

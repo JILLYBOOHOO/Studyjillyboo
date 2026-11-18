@@ -9,9 +9,12 @@ import {
   MessageSquare,
   RotateCcw,
   Send,
+  Sigma,
   Trash2,
 } from 'lucide-react';
 import { InteractiveQuizPanel } from './InteractiveQuizPanel';
+import { LATEX_SNIPPETS, MathText, containsLatex } from './MathText';
+import { NotebookLMStudioPanel } from './NotebookLMStudioPanel';
 import type {
   Course,
   EmailMessageSummary,
@@ -19,18 +22,20 @@ import type {
   LectureAnalysis,
   ModuleGuide,
   QuizAnswerRecord,
+  SmartNoteCard,
   TutorCitation,
   TutorMessage,
   TutorMode,
   TutorThread,
 } from '../types';
 
-export type TutorSubTab = 'qa' | 'socratic' | 'quiz';
+export type TutorSubTab = 'qa' | 'socratic' | 'quiz' | 'studio';
 
 interface TutorViewProps {
   courses: Course[];
   lectures: LectureAnalysis[];
   modules: ModuleGuide[];
+  smartNotes: SmartNoteCard[];
   emails: EmailMessageSummary[];
   qaThread: TutorThread | null;
   socraticThread: TutorThread | null;
@@ -74,6 +79,7 @@ export function TutorView({
   courses,
   lectures,
   modules,
+  smartNotes,
   emails,
   qaThread,
   socraticThread,
@@ -97,6 +103,7 @@ export function TutorView({
   const [qaInput, setQaInput] = useState('');
   const [qaLoading, setQaLoading] = useState(false);
   const [qaError, setQaError] = useState<string | null>(null);
+  const [showQaMath, setShowQaMath] = useState(false);
 
   // Socratic Mastery Coach state
   const [socraticTopicInput, setSocraticTopicInput] = useState('');
@@ -104,6 +111,12 @@ export function TutorView({
   const [socraticAnswerInput, setSocraticAnswerInput] = useState('');
   const [socraticLoading, setSocraticLoading] = useState(false);
   const [socraticError, setSocraticError] = useState<string | null>(null);
+  const [showSocraticMath, setShowSocraticMath] = useState(false);
+  const [studioQuizRequest, setStudioQuizRequest] = useState<{
+    courseCode: string;
+    materialId?: string;
+    topicFocus?: string;
+  } | null>(null);
 
   const qaEndRef = useRef<HTMLDivElement | null>(null);
   const socraticEndRef = useRef<HTMLDivElement | null>(null);
@@ -159,6 +172,7 @@ export function TutorView({
           history: nextUserMessages,
           lectures,
           modules,
+          smartNotes,
           emails,
         }),
       });
@@ -367,6 +381,17 @@ export function TutorView({
             >
               Interactive Quizzes
             </button>
+            <button
+              type="button"
+              onClick={() => onChangeSubTab('studio')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
+                activeSubTab === 'studio'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              NotebookLM Studio
+            </button>
           </div>
         </div>
       </div>
@@ -462,7 +487,7 @@ export function TutorView({
                       <p className="text-xs font-semibold opacity-75">
                         {msg.role === 'user' ? 'You' : 'StudyTrack Course Chatbot'}
                       </p>
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                      <MathText text={msg.text} className="text-sm leading-relaxed" />
 
                       {msg.role === 'assistant' && msg.citations && msg.citations.length > 0 && (
                         <div className="pt-2 border-t border-slate-200 flex flex-wrap items-center gap-2">
@@ -508,12 +533,49 @@ export function TutorView({
                   {qaError}
                 </p>
               )}
+              {containsLatex(qaInput) && (
+                <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 space-y-1">
+                  <span className="block text-[11px] font-medium text-slate-500">
+                    LaTeX Math Preview
+                  </span>
+                  <MathText text={qaInput} className="text-sm text-slate-900" />
+                </div>
+              )}
+              {showQaMath && (
+                <div className="flex flex-wrap items-center gap-1.5 pb-1">
+                  {LATEX_SNIPPETS.map((item) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() =>
+                        setQaInput((prev) => (prev ? `${prev} ${item.snippet}` : item.snippet))
+                      }
+                      className="px-2 py-1 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md whitespace-nowrap"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowQaMath((v) => !v)}
+                  title="Insert LaTeX math formula"
+                  className={`inline-flex items-center gap-1 px-2.5 py-2 text-xs font-medium rounded-lg border transition-colors whitespace-nowrap shrink-0 ${
+                    showQaMath
+                      ? 'bg-blue-50 text-blue-800 border-blue-300'
+                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  <Sigma className="w-3.5 h-3.5" />
+                  LaTeX
+                </button>
                 <input
                   type="text"
                   value={qaInput}
                   onChange={(e) => setQaInput(e.target.value)}
-                  placeholder="Ask a question about any lecture transcript, module PDF, or assignment..."
+                  placeholder="Ask a question or paste LaTeX ($...$ / $$...$$) about any lecture or module..."
                   className="flex-1 rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
                 />
                 <button
@@ -734,7 +796,7 @@ export function TutorView({
                         </div>
                       )}
 
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                      <MathText text={msg.text} className="text-sm leading-relaxed" />
 
                       {msg.role === 'assistant' && msg.citations && msg.citations.length > 0 && (
                         <div className="pt-2 border-t border-slate-200 flex flex-wrap items-center gap-2">
@@ -793,7 +855,48 @@ export function TutorView({
                 </p>
               )}
 
+              {containsLatex(socraticAnswerInput) && (
+                <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 space-y-1">
+                  <span className="block text-[11px] font-medium text-slate-500">
+                    LaTeX Math Preview
+                  </span>
+                  <MathText text={socraticAnswerInput} className="text-sm text-slate-900" />
+                </div>
+              )}
+
+              {showSocraticMath && (
+                <div className="flex flex-wrap items-center gap-1.5 pb-1">
+                  {LATEX_SNIPPETS.map((item) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() =>
+                        setSocraticAnswerInput((prev) =>
+                          prev ? `${prev} ${item.snippet}` : item.snippet,
+                        )
+                      }
+                      className="px-2 py-1 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md whitespace-nowrap"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSocraticMath((v) => !v)}
+                  title="Insert LaTeX math formula"
+                  className={`inline-flex items-center gap-1 px-2.5 py-2 text-xs font-medium rounded-lg border transition-colors whitespace-nowrap shrink-0 ${
+                    showSocraticMath
+                      ? 'bg-blue-50 text-blue-800 border-blue-300'
+                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  <Sigma className="w-3.5 h-3.5" />
+                  LaTeX
+                </button>
                 <input
                   type="text"
                   value={socraticAnswerInput}
@@ -801,7 +904,7 @@ export function TutorView({
                   placeholder={
                     socraticMessages.length === 0
                       ? 'Type a topic you want to master (or click Start Coaching above)...'
-                      : 'Explain your answer here (even if unsure, give your best try!)...'
+                      : 'Explain your answer here (supports LaTeX $...$ math)...'
                   }
                   className="flex-1 rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
                 />
@@ -842,12 +945,36 @@ export function TutorView({
           modules={modules}
           emails={emails}
           quizzes={quizzes}
-          initialRequest={initialQuizRequest}
-          onClearInitialRequest={onClearInitialQuizRequest}
+          initialRequest={studioQuizRequest || initialQuizRequest}
+          onClearInitialRequest={() => {
+            setStudioQuizRequest(null);
+            onClearInitialQuizRequest();
+          }}
           onCreateQuiz={onCreateQuiz}
           onUpdateQuizProgress={onUpdateQuizProgress}
           onDeleteQuiz={onDeleteQuiz}
           onCoachMistake={handleLaunchCoachFromQuiz}
+        />
+      )}
+
+      {/* TAB 4: NotebookLM Study Studio */}
+      {activeSubTab === 'studio' && (
+        <NotebookLMStudioPanel
+          courses={courses}
+          lectures={lectures}
+          modules={modules}
+          smartNotes={smartNotes}
+          onStartCoachTopic={(courseCode, topicFocus) =>
+            handleLaunchCoachFromQuiz(courseCode, topicFocus)
+          }
+          onStartQuizTopic={(courseCode, topicFocus) => {
+            setCourseFilter(courseCode || 'ALL');
+            setStudioQuizRequest({
+              courseCode: courseCode || 'ALL',
+              topicFocus,
+            });
+            onChangeSubTab('quiz');
+          }}
         />
       )}
     </div>

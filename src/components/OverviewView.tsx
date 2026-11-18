@@ -3,9 +3,13 @@ import {
   AlertCircle,
   ArrowRight,
   BookOpen,
+  Calendar,
   CheckCircle2,
   Clock,
   ExternalLink,
+  FileText,
+  GraduationCap,
+  HelpCircle,
   Loader2,
   Mail,
   Plus,
@@ -14,6 +18,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { SafeImage } from './SafeImage';
+import { TiltCard3D } from './TiltCard3D';
 import type {
   CatchUpSprint,
   ClassworkItem,
@@ -34,7 +39,10 @@ interface OverviewViewProps {
   progressReport: ProgressReport | null;
   syncedEmailCount: number;
   hasGmailToken: boolean;
-  onNavigate: (tab: 'classwork' | 'library' | 'tutor' | 'email') => void;
+  onNavigate: (
+    tab: 'classwork' | 'library' | 'tutor' | 'workspace',
+    subTab?: 'gmail' | 'calendar' | 'docs',
+  ) => void;
   onOpenLinkedMaterial: (ref: LinkedMaterialRef) => void;
   onAnalyzeProgress: () => Promise<void>;
   onGenerateSprint: (hours: number, focusNote: string) => Promise<void>;
@@ -42,6 +50,13 @@ interface OverviewViewProps {
   onDeleteCourse: (courseId: string) => Promise<void>;
   onOpenAddModal: () => void;
   onResetStarter: () => Promise<void>;
+  onSyncAmberCurriculum: () => Promise<{
+    coursesAdded: number;
+    coursesUpdated: number;
+    tasksAdded: number;
+  }>;
+  onQuickStartCoach: (courseCode: string, topicFocus: string) => void;
+  onQuickStartQuiz: (courseCode: string, topicFocus: string) => void;
   onClearAll: () => Promise<void>;
 }
 
@@ -121,9 +136,7 @@ export function OverviewView({
               />
               <div>
                 <p className="text-sm font-medium text-slate-900">{studentName}</p>
-                <p className="text-xs text-slate-500">
-                  Associate Degree in AI · Jamaica · Semester 1
-                </p>
+                <p className="text-xs text-slate-500">Associate Degree in Artificial Intelligence</p>
               </div>
             </div>
 
@@ -132,12 +145,13 @@ export function OverviewView({
             </h1>
 
             <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl">
-              Your progress tracker combines class emails, downloaded Zoom recordings and
-              transcripts, and module files to prioritize exactly what to review first.
+              Your progress tracker combines Gmail updates, Google Calendar &amp; Docs, Zoom
+              recordings and transcripts, and module files aligned to your HEART/NSTA Amber Academy
+              AI degree.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center gap-2.5 pt-2">
             <button
               type="button"
               onClick={() => onNavigate('library')}
@@ -149,16 +163,33 @@ export function OverviewView({
             <button
               type="button"
               onClick={() => onNavigate('tutor')}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors whitespace-nowrap shrink-0"
             >
               Ask Course Chatbot
             </button>
             <button
               type="button"
-              onClick={() => onNavigate('email')}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors whitespace-nowrap shrink-0"
+              onClick={() => onNavigate('workspace', 'calendar')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors whitespace-nowrap shrink-0"
             >
-              {hasGmailToken ? `Gmail Connected (${syncedEmailCount})` : 'Connect Gmail'}
+              <Calendar className="w-4 h-4 text-slate-500" />
+              Calendar
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate('workspace', 'docs')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors whitespace-nowrap shrink-0"
+            >
+              <FileText className="w-4 h-4 text-slate-500" />
+              Google Docs
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate('workspace', 'gmail')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors whitespace-nowrap shrink-0"
+            >
+              <Mail className="w-4 h-4 text-slate-500" />
+              {hasGmailToken ? `Gmail (${syncedEmailCount})` : 'Connect Gmail'}
             </button>
           </div>
         </div>
@@ -173,67 +204,78 @@ export function OverviewView({
         </div>
       </section>
 
-      {/* Full-Width 4-Column Metric Strip */}
-      <section className="bg-white border border-slate-200 rounded-xl grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 divide-x divide-slate-200">
-        <div className="p-5 space-y-1">
-          <p className="text-xs font-medium text-slate-500">Urgent Catch-Up</p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-semibold text-slate-900 tabular-nums">
-              {urgentCount}
-            </span>
-            {urgentCount > 0 ? (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700">
-                <AlertCircle className="w-3.5 h-3.5" />
-                Needs attention
+      {/* Responsive 3D Tilt Metric Cards (Glass + Neumorphism + Metallic Gold) */}
+      <section aria-label="Study Metrics" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <TiltCard3D goldAccent className="p-5">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wide gold-text">Urgent Catch-Up</p>
+              <span className="gold-foil-badge px-1.5 py-0.5 text-[10px] font-bold rounded">PRIORITY</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-slate-900 tabular-nums">
+                {urgentCount}
               </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Clear
+              {urgentCount > 0 ? (
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  Needs attention
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Clear
+                </span>
+              )}
+            </div>
+          </div>
+        </TiltCard3D>
+
+        <TiltCard3D className="p-5">
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Open Study Backlog</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold neon-gradient-text tabular-nums">
+                {totalHoursText}
               </span>
-            )}
+              <span className="text-xs text-slate-500 tabular-nums">
+                {openTasks.length} open item{openTasks.length === 1 ? '' : 's'}
+              </span>
+            </div>
           </div>
-        </div>
+        </TiltCard3D>
 
-        <div className="p-5 space-y-1">
-          <p className="text-xs font-medium text-slate-500">Open Study Backlog</p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-semibold text-slate-900 tabular-nums">
-              {totalHoursText}
-            </span>
-            <span className="text-xs text-slate-500 tabular-nums">
-              {openTasks.length} open item{openTasks.length === 1 ? '' : 's'}
-            </span>
+        <TiltCard3D className="p-5">
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Organized Materials</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold neon-gradient-text tabular-nums">
+                {lectures.length + modules.length}
+              </span>
+              <span className="text-xs text-slate-500 tabular-nums">
+                {lectures.length} Zoom · {modules.length} modules
+              </span>
+            </div>
           </div>
-        </div>
+        </TiltCard3D>
 
-        <div className="p-5 space-y-1">
-          <p className="text-xs font-medium text-slate-500">Organized Materials</p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-semibold text-slate-900 tabular-nums">
-              {lectures.length + modules.length}
-            </span>
-            <span className="text-xs text-slate-500 tabular-nums">
-              {lectures.length} Zoom · {modules.length} modules
-            </span>
+        <TiltCard3D goldAccent className="p-5">
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold uppercase tracking-wide gold-text">Google Workspace</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-slate-900 tabular-nums">
+                {syncedEmailCount}
+              </span>
+              <button
+                type="button"
+                onClick={() => onNavigate('workspace', 'gmail')}
+                className="text-xs font-semibold text-blue-700 hover:underline whitespace-nowrap"
+              >
+                {hasGmailToken ? 'Open Gmail, Cal & Docs' : 'Sync Workspace'}
+              </button>
+            </div>
           </div>
-        </div>
-
-        <div className="p-5 space-y-1">
-          <p className="text-xs font-medium text-slate-500">Synced Class Emails</p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-semibold text-slate-900 tabular-nums">
-              {syncedEmailCount}
-            </span>
-            <button
-              type="button"
-              onClick={() => onNavigate('email')}
-              className="text-xs font-medium text-blue-700 hover:underline whitespace-nowrap"
-            >
-              {hasGmailToken ? 'Refresh inbox' : 'Sync Gmail'}
-            </button>
-          </div>
-        </div>
+        </TiltCard3D>
       </section>
 
       {/* Progress & Gap Analysis Section (Email + Study Materials -> Prioritized Catch-Up Topics) */}
@@ -254,7 +296,7 @@ export function OverviewView({
             {!hasGmailToken && (
               <button
                 type="button"
-                onClick={() => onNavigate('email')}
+                onClick={() => onNavigate('workspace', 'gmail')}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 border border-slate-300 hover:bg-slate-50 rounded-lg whitespace-nowrap"
               >
                 <Mail className="w-3.5 h-3.5" />
@@ -450,7 +492,7 @@ export function OverviewView({
                 type="text"
                 value={focusNote}
                 onChange={(e) => setFocusNote(e.target.value)}
-                placeholder="Optional note: e.g., I have a Python lab due tomorrow"
+                placeholder="Optional note: e.g., I need to bring AIL1002 Python from 50% to 100%"
                 className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
               />
               <button
@@ -575,7 +617,7 @@ export function OverviewView({
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 border border-slate-300 hover:bg-slate-50 rounded-lg"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                Load AI Associate Degree Starter Courses
+                Load Amber Academy Starter Courses
               </button>
             </div>
           ) : (

@@ -7,9 +7,11 @@ import {
   ClipboardCheck,
   Loader2,
   RotateCcw,
+  Sigma,
   Trash2,
   XCircle,
 } from 'lucide-react';
+import { LATEX_SNIPPETS, MathText, containsLatex } from './MathText';
 import type {
   Course,
   EmailMessageSummary,
@@ -71,6 +73,7 @@ export function InteractiveQuizPanel({
   const [gradingShort, setGradingShort] = useState(false);
   const [revealedIdeal, setRevealedIdeal] = useState<Record<string, boolean>>({});
   const [viewingSummary, setViewingSummary] = useState(false);
+  const [showShortLatex, setShowShortLatex] = useState(false);
 
   const activeQuiz = quizzes.find((q) => q.id === activeQuizId) || null;
 
@@ -498,9 +501,10 @@ export function InteractiveQuizPanel({
                 return (
                   <div key={q.id} className="p-4 space-y-2">
                     <div className="flex flex-wrap items-start justify-between gap-2">
-                      <p className="text-sm font-medium text-slate-900 flex-1">
-                        {String(idx + 1).padStart(2, '0')}. {q.prompt}
-                      </p>
+                      <div className="text-sm font-medium text-slate-900 flex-1">
+                        <span className="mr-1.5">{String(idx + 1).padStart(2, '0')}.</span>
+                        <MathText text={q.prompt} as="span" />
+                      </div>
                       {passed ? (
                         <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 shrink-0">
                           <CheckCircle2 className="w-3.5 h-3.5" />
@@ -517,9 +521,10 @@ export function InteractiveQuizPanel({
                     <p className="text-xs text-slate-500">
                       Concept: {q.conceptFocus} · Source: {q.sourceTitle}
                     </p>
-                    <p className="text-xs text-slate-700">
-                      {rec?.feedback || `Model answer: ${q.modelAnswer}`}
-                    </p>
+                    <MathText
+                      text={rec?.feedback || `Model answer: ${q.modelAnswer}`}
+                      className="text-xs text-slate-700 leading-relaxed"
+                    />
 
                     {!passed && (
                       <div className="pt-1 flex flex-wrap items-center gap-3">
@@ -664,9 +669,10 @@ export function InteractiveQuizPanel({
                   <span>Source: {currentQuestion.sourceTitle}</span>
                 </div>
 
-                <p className="text-base sm:text-lg font-semibold text-slate-900 leading-snug">
-                  {currentQuestion.prompt}
-                </p>
+                <MathText
+                  text={currentQuestion.prompt}
+                  className="text-base sm:text-lg font-semibold text-slate-900 leading-snug"
+                />
 
                 {currentQuestion.type === 'mcq' && currentQuestion.options ? (
                   <div className="space-y-2.5">
@@ -700,7 +706,7 @@ export function InteractiveQuizPanel({
                           <span className="font-mono text-xs font-semibold text-slate-500 mt-0.5 shrink-0">
                             {OPTION_LETTERS[idx]}.
                           </span>
-                          <span className="text-sm flex-1">{opt}</span>
+                          <MathText text={opt} as="span" className="text-sm flex-1" />
                           {checked && isRightOption && (
                             <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
                           )}
@@ -730,9 +736,35 @@ export function InteractiveQuizPanel({
                       rows={3}
                       value={shortInput}
                       onChange={(e) => setShortInput(e.target.value)}
-                      placeholder="Explain your answer in your own words..."
+                      placeholder="Explain your answer in your own words (supports LaTeX like $\frac{a}{b}$)..."
                       className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
                     />
+                    {containsLatex(shortInput) && (
+                      <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 space-y-1">
+                        <span className="block text-[11px] font-medium text-slate-500">
+                          LaTeX Math Preview
+                        </span>
+                        <MathText text={shortInput} className="text-sm text-slate-900" />
+                      </div>
+                    )}
+                    {showShortLatex && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {LATEX_SNIPPETS.map((item) => (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() =>
+                              setShortInput((prev) =>
+                                prev ? `${prev} ${item.snippet}` : item.snippet,
+                              )
+                            }
+                            className="px-2 py-1 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md whitespace-nowrap"
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <div className="flex flex-wrap items-center gap-3">
                       <button
                         type="submit"
@@ -749,6 +781,19 @@ export function InteractiveQuizPanel({
                         ) : (
                           'Check Answer'
                         )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowShortLatex((v) => !v)}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors whitespace-nowrap ${
+                          showShortLatex
+                            ? 'bg-blue-50 text-blue-800 border-blue-300'
+                            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Sigma className="w-3.5 h-3.5" />
+                        Insert LaTeX
                       </button>
 
                       <button
@@ -770,7 +815,7 @@ export function InteractiveQuizPanel({
                     {revealedIdeal[currentQuestion.id] && (
                       <div className="rounded-lg bg-slate-50 border border-slate-200 p-3.5 text-xs text-slate-700 space-y-1">
                         <p className="font-semibold text-slate-800">Model Answer</p>
-                        <p className="leading-relaxed">{currentQuestion.modelAnswer}</p>
+                        <MathText text={currentQuestion.modelAnswer} className="leading-relaxed" />
                       </div>
                     )}
                   </form>
@@ -805,9 +850,10 @@ export function InteractiveQuizPanel({
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-slate-800 leading-relaxed">
-                      {currentRecord.feedback}
-                    </p>
+                    <MathText
+                      text={currentRecord.feedback}
+                      className="text-sm text-slate-800 leading-relaxed"
+                    />
 
                     {!currentRecord.isCorrect && (
                       <button

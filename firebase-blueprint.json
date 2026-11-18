@@ -121,7 +121,7 @@
         },
         "source": {
           "type": "string",
-          "enum": ["Manual", "Zoom Transcript", "Zoom Recording", "Module File", "Gmail"]
+          "enum": ["Manual", "Zoom Transcript", "Zoom Recording", "Module File", "Gmail", "Smart Note"]
         },
         "notes": {
           "type": "string",
@@ -218,6 +218,20 @@
           "type": "string",
           "minLength": 0,
           "maxLength": 8000
+        },
+        "studentNameMentions": {
+          "type": "array"
+        },
+        "classifiedMoments": {
+          "type": "array"
+        },
+        "tipsAndWarnings": {
+          "type": "array"
+        },
+        "fullTranscript": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 25000
         },
         "createdAt": {
           "type": "string",
@@ -514,6 +528,104 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "SmartNoteCard": {
+      "title": "SmartNoteCard",
+      "description": "Zoho Notebook-style smart card (formatted code snippet, interactive checklist, or study note with optional reminder) saved from OCR snips or pasted text.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "courseCode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "cardType": {
+          "type": "string",
+          "enum": ["code", "checklist", "note", "flashcard", "template"]
+        },
+        "colorTag": {
+          "type": "string",
+          "enum": ["slate", "blue", "amber", "emerald", "rose"]
+        },
+        "pinned": {
+          "type": "boolean"
+        },
+        "content": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 12000
+        },
+        "codeLanguage": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 32
+        },
+        "codeSettings": {
+          "type": "object"
+        },
+        "checklistItems": {
+          "type": "array"
+        },
+        "keywords": {
+          "type": "array"
+        },
+        "reminderAt": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 40
+        },
+        "sourceLabel": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 160
+        },
+        "emailSubject": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 240
+        },
+        "flashcardHint": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 400
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "courseCode",
+        "title",
+        "cardType",
+        "colorTag",
+        "pinned",
+        "content",
+        "codeLanguage",
+        "codeSettings",
+        "checklistItems",
+        "keywords",
+        "reminderAt",
+        "sourceLabel",
+        "createdAt",
+        "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -552,6 +664,10 @@
     "/users/{userId}/quizzes/{quizId}": {
       "schema": { "$ref": "#/entities/InteractiveQuiz" },
       "description": "Interactive practice quizzes and graded attempts generated from course materials."
+    },
+    "/users/{userId}/notes/{noteId}": {
+      "schema": { "$ref": "#/entities/SmartNoteCard" },
+      "description": "Zoho Notebook-style smart cards (code snippets, checklists, study notes, and reminders)."
     }
   }
 }

@@ -172,7 +172,7 @@ export function EmailView({
   ) => {
     const matched = courses.find((c) => c.code === action.courseCode);
     await onAddTask({
-      courseCode: action.courseCode || 'AI-101',
+      courseCode: action.courseCode || 'AIL1001',
       courseTitle: matched?.title || action.courseCode || 'AI Associate Degree',
       title: action.title,
       type: action.type,

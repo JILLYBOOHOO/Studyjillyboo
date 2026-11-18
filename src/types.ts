@@ -17,7 +17,8 @@ export type ClassworkSource =
   | 'Zoom Transcript'
   | 'Zoom Recording'
   | 'Module File'
-  | 'Gmail';
+  | 'Gmail'
+  | 'Smart Note';
 
 export interface Course {
   id: string;
@@ -60,6 +61,70 @@ export interface LectureQuestion {
   answer: string;
 }
 
+export type VideoMomentCategory =
+  | 'Key Point'
+  | 'Tip / Warning'
+  | 'Code Shown'
+  | 'Action Item'
+  | 'Name Mentioned'
+  | 'Concept';
+
+export interface StudentNameMention {
+  timestamp: string;
+  startSeconds: number;
+  context: string;
+  reason: string;
+}
+
+export interface VideoClassifiedMoment {
+  timestamp: string;
+  startSeconds: number;
+  endSeconds: number;
+  category: VideoMomentCategory;
+  title: string;
+  summary: string;
+  codeSnippet?: string;
+  codeLanguage?: string;
+  screenshotNeeded?: boolean;
+}
+
+export interface VideoScreenshotItem {
+  index: number;
+  timestamp: string;
+  seconds: number;
+  category: VideoMomentCategory;
+  caption: string;
+  imageUrl: string;
+  codeSnippet?: string;
+  codeLanguage?: string;
+}
+
+export interface VideoMediaStats {
+  originalSizeMb: number;
+  compressedSizeMb: number;
+  durationSeconds: number;
+  durationFormatted: string;
+  wasCompressed: boolean;
+  isAudioOnly: boolean;
+}
+
+export interface VideoSessionResult {
+  sessionId: string;
+  videoStats: VideoMediaStats;
+  screenshots: VideoScreenshotItem[];
+  lecture: Omit<LectureAnalysis, 'id' | 'createdAt'>;
+  savedLectureId?: string;
+}
+
+export interface VideoAskResponse {
+  answer: string;
+  timestampRefs: Array<{
+    timestamp: string;
+    seconds: number;
+    note: string;
+  }>;
+}
+
 export interface LectureAnalysis {
   id: string;
   courseCode: string;
@@ -75,6 +140,10 @@ export interface LectureAnalysis {
   actionItems: LectureActionItem[];
   checkQuestions: LectureQuestion[];
   rawExcerpt: string;
+  studentNameMentions?: StudentNameMention[];
+  classifiedMoments?: VideoClassifiedMoment[];
+  tipsAndWarnings?: string[];
+  fullTranscript?: string;
   createdAt: string;
 }
 
@@ -250,3 +319,144 @@ export interface ExtractedEmailWork {
   zoomLinks: string[];
   actionItems: ExtractedEmailAction[];
 }
+
+export interface CalendarEventItem {
+  id: string;
+  summary: string;
+  description?: string;
+  location?: string;
+  start: string;
+  end: string;
+  htmlLink?: string;
+  isAllDay?: boolean;
+}
+
+export interface GoogleDocSummary {
+  id: string;
+  name: string;
+  modifiedTime: string;
+  webViewLink?: string;
+}
+
+export interface GoogleDocContent {
+  documentId: string;
+  title: string;
+  plainText: string;
+  revisionId?: string;
+  webViewLink?: string;
+}
+
+export type SmartNoteCardType = 'code' | 'checklist' | 'note' | 'flashcard' | 'template';
+export type SmartNoteColorTag = 'slate' | 'blue' | 'amber' | 'emerald' | 'rose';
+
+export interface SmartNoteCodeSettings {
+  theme: 'dark' | 'light';
+  showLineNumbers: boolean;
+  wordWrap: boolean;
+  fontSize: 'sm' | 'md' | 'lg';
+}
+
+export interface SmartNoteChecklistItem {
+  text: string;
+  done: boolean;
+}
+
+export interface SmartNoteCard {
+  id: string;
+  courseCode: string;
+  title: string;
+  cardType: SmartNoteCardType;
+  colorTag: SmartNoteColorTag;
+  pinned: boolean;
+  content: string;
+  codeLanguage: string;
+  codeSettings: SmartNoteCodeSettings;
+  checklistItems: SmartNoteChecklistItem[];
+  keywords: string[];
+  reminderAt: string;
+  sourceLabel: string;
+  emailSubject?: string;
+  flashcardHint?: string;
+  createdAt: string;
+}
+
+export type SmartActionIntent =
+  | 'date_reminder'
+  | 'email_letter'
+  | 'definition_flashcard'
+  | 'code_snippet'
+  | 'checklist_tasks'
+  | 'study_note';
+
+export interface SmartClipActionOption {
+  actionId:
+    | 'set_reminder'
+    | 'add_classwork'
+    | 'open_calendar'
+    | 'send_email'
+    | 'save_template'
+    | 'save_flashcard'
+    | 'practice_coach'
+    | 'save_code'
+    | 'save_checklist'
+    | 'save_note';
+  label: string;
+  description: string;
+}
+
+export interface SmartClipAnalysis {
+  handoffId?: string;
+  extractedText: string;
+  intent: SmartActionIntent;
+  intentSummary: string;
+  detectedDateIso: string;
+  reminderTitle: string;
+  emailSubject: string;
+  emailTo: string;
+  emailBody: string;
+  flashcardFront: string;
+  flashcardBack: string;
+  flashcardHint: string;
+  smartCard: Omit<SmartNoteCard, 'id' | 'createdAt'>;
+  recommendedActions: SmartClipActionOption[];
+}
+
+export interface PodcastTurn {
+  speaker: 'Alex' | 'Sam';
+  line: string;
+}
+
+export interface MindMapLeaf {
+  label: string;
+  detail: string;
+}
+
+export interface MindMapBranch {
+  title: string;
+  summary: string;
+  courseCode: string;
+  children: MindMapLeaf[];
+}
+
+export interface MindMapData {
+  rootTitle: string;
+  rootSummary: string;
+  branches: MindMapBranch[];
+}
+
+export interface StudioFlashcard {
+  id: string;
+  front: string;
+  back: string;
+  hint: string;
+  courseCode: string;
+}
+
+export interface NotebookStudioBundle {
+  briefingTitle: string;
+  briefingSummary: string;
+  podcastDialogue: PodcastTurn[];
+  mindMap: MindMapData;
+  flashcards: StudioFlashcard[];
+}
+
